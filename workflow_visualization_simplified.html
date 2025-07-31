@@ -126,27 +126,27 @@ sequenceDiagram
     participant Files as 📁 文件系统
 
     Note over User, Files: 1. 初始化阶段
-    User->>Client: 输入查询指令<br/>"分析天翼安全科技有限公司热点新闻，<br/>并发送邮件给xxx@qq.com"
-    Client->>Client: 生成带时间戳的文件名<br/>sentiment_天翼安全_20250730_154329.md
+    User->>Client: 输入查询指令<br/>"分析美国关税热点新闻，<br/>并发送邮件给xxx@qq.com"
+    Client->>Client: 生成带时间戳的文件名<br/>sentiment_美国关税_20250730_154329.md
     Client->>LLM: 发送工具列表 + 用户指令<br/>请求生成工具调用计划
     LLM->>Client: 返回JSON格式的工具调用计划<br/>[{"name": "search_google_news", "args": {...}},<br/>{"name": "analyze_sentiment", "args": {...}},<br/>{"name": "send_email_with_attachment", "args": {...}}]
 
     Note over User, Files: 2. 新闻搜索阶段
-    Client->>Server: 调用 search_google_news 工具<br/>参数: {"keyword": "天翼安全科技有限公司"}
+    Client->>Server: 调用 search_google_news 工具<br/>参数: {"keyword": "美国关税"}
     Server->>Tools: 调用 Serper API 搜索Google新闻
     Tools->>Server: 返回新闻数据
     Server->>Files: 保存新闻数据到JSON文件<br/>./google_news/google_news_20250730_154329.json
     Server->>Client: 返回搜索结果<br/>"✅ 已获取相关新闻...<br/>📄 已保存到：./google_news/..."
 
     Note over User, Files: 3. 情感分析阶段
-    Client->>Server: 调用 analyze_sentiment 工具<br/>参数: {"text": "实际新闻内容...", "filename": "sentiment_天翼安全_20250730_154329.md"}
+    Client->>Server: 调用 analyze_sentiment 工具<br/>参数: {"text": "实际新闻内容...", "filename": "sentiment_美国关税_20250730_154329.md"}
     Server->>LLM: 发送情感分析请求<br/>"请对以下新闻内容进行情绪倾向分析..."
     LLM->>Server: 返回情感分析结果
-    Server->>Files: 生成Markdown报告<br/>./sentiment_reports/sentiment_天翼安全_20250730_154329.md
+    Server->>Files: 生成Markdown报告<br/>./sentiment_reports/sentiment_美国关税_20250730_154329.md
     Server->>Client: 返回文件路径
 
     Note over User, Files: 4. 邮件发送阶段
-    Client->>Server: 调用 send_email_with_attachment 工具<br/>参数: {"to": "xxx@qq.com", "subject": "...", "body": "...", "filename": "sentiment_天翼安全_20250730_154329.md"}
+    Client->>Server: 调用 send_email_with_attachment 工具<br/>参数: {"to": "xxx@qq.com", "subject": "...", "body": "...", "filename": "sentiment_美国关税_20250730_154329.md"}
     Server->>Files: 读取Markdown文件作为附件
     Server->>Tools: 通过SMTP发送邮件
     Tools->>Server: 返回发送结果
