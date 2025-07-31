@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP 工作流程图</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            font-size: 16px;
+        }
+        
+        /* 增大Mermaid图中的字体 */
+        .mermaid .actor {
+            font-size: 18px !important;
+        }
+        
+        .mermaid .messageText {
+            font-size: 16px !important;
+        }
+        
+        .mermaid .noteText {
+            font-size: 16px !important;
+        }
+        
+        .mermaid .label {
+            font-size: 16px !important;
+        }
+        .description {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        .description h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .stage {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        .stage h4 {
+            margin: 0 0 10px 0;
+            color: #28a745;
+        }
+        .stage ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .stage li {
+            margin: 5px 0;
+        }
+        .note {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .note h4 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MCP 工作流程图</h1>
+            <p>从用户指令到邮件发送的完整自动化流程</p>
+        </div>
+        
+        <div class="content">
+            <div class="mermaid">
+sequenceDiagram
+    participant User as 👤 用户
+    participant Client as 🤖 MCP Client
+    participant LLM as 🧠 LLM (大模型)
+    participant Server as 🖥️ MCP Server
+    participant Tools as 🔧 工具集
+    participant Files as 📁 文件系统
+
+    Note over User, Files: 1. 初始化阶段
+    User->>Client: 输入查询指令<br/>"分析天翼安全科技有限公司热点新闻，<br/>并发送邮件给xxx@qq.com"
+    Client->>Client: 生成带时间戳的文件名<br/>sentiment_天翼安全_20250730_154329.md
+    Client->>LLM: 发送工具列表 + 用户指令<br/>请求生成工具调用计划
+    LLM->>Client: 返回JSON格式的工具调用计划<br/>[{"name": "search_google_news", "args": {...}},<br/>{"name": "analyze_sentiment", "args": {...}},<br/>{"name": "send_email_with_attachment", "args": {...}}]
+
+    Note over User, Files: 2. 新闻搜索阶段
+    Client->>Server: 调用 search_google_news 工具<br/>参数: {"keyword": "天翼安全科技有限公司"}
+    Server->>Tools: 调用 Serper API 搜索Google新闻
+    Tools->>Server: 返回新闻数据
+    Server->>Files: 保存新闻数据到JSON文件<br/>./google_news/google_news_20250730_154329.json
+    Server->>Client: 返回搜索结果<br/>"✅ 已获取相关新闻...<br/>📄 已保存到：./google_news/..."
+
+    Note over User, Files: 3. 情感分析阶段
+    Client->>Server: 调用 analyze_sentiment 工具<br/>参数: {"text": "实际新闻内容...", "filename": "sentiment_天翼安全_20250730_154329.md"}
+    Server->>LLM: 发送情感分析请求<br/>"请对以下新闻内容进行情绪倾向分析..."
+    LLM->>Server: 返回情感分析结果
+    Server->>Files: 生成Markdown报告<br/>./sentiment_reports/sentiment_天翼安全_20250730_154329.md
+    Server->>Client: 返回文件路径
+
+    Note over User, Files: 4. 邮件发送阶段
+    Client->>Server: 调用 send_email_with_attachment 工具<br/>参数: {"to": "xxx@qq.com", "subject": "...", "body": "...", "filename": "sentiment_天翼安全_20250730_154329.md"}
+    Server->>Files: 读取Markdown文件作为附件
+    Server->>Tools: 通过SMTP发送邮件
+    Tools->>Server: 返回发送结果
+    Server->>Client: 返回发送状态<br/>"✅ 邮件已成功发送..."
+
+    Note over User, Files: 5. 最终响应阶段
+    Client->>LLM: 发送完整对话历史<br/>请求生成最终回复
+    LLM->>Client: 返回总结性回复
+    Client->>Files: 保存对话记录<br/>./llm_outputs/查询_20250730_154329.txt
+    Client->>User: 显示最终结果<br/>"分析完成，邮件已发送..."
+            </div>
+
+            <div class="description">
+                <h3>📋 工作流程详细说明</h3>
+                
+                <div class="stage">
+                    <h4>1️⃣ 初始化阶段</h4>
+                    <ul>
+                        <li><strong>用户输入</strong>：自然语言查询指令</li>
+                        <li><strong>文件名生成</strong>：客户端预生成带时间戳的Markdown文件名</li>
+                        <li><strong>工具规划</strong>：LLM根据用户指令和可用工具生成调用计划</li>
+                    </ul>
+                </div>
+
+                <div class="stage">
+                    <h4>2️⃣ 新闻搜索阶段</h4>
+                    <ul>
+                        <li><strong>工具调用</strong>：search_google_news 工具</li>
+                        <li><strong>API调用</strong>：使用Serper API搜索Google新闻</li>
+                        <li><strong>数据保存</strong>：将搜索结果保存为JSON文件</li>
+                        <li><strong>返回结果</strong>：包含成功消息和文件路径</li>
+                    </ul>
+                </div>
+
+                <div class="stage">
+                    <h4>3️⃣ 情感分析阶段</h4>
+                    <ul>
+                        <li><strong>工具调用</strong>：analyze_sentiment 工具</li>
+                        <li><strong>LLM分析</strong>：将实际新闻内容发送给LLM进行情感分析</li>
+                        <li><strong>报告生成</strong>：生成包含原始文本和分析结果的Markdown报告</li>
+                        <li><strong>文件保存</strong>：保存到sentiment_reports目录</li>
+                    </ul>
+                </div>
+
+                <div class="stage">
+                    <h4>4️⃣ 邮件发送阶段</h4>
+                    <ul>
+                        <li><strong>工具调用</strong>：send_email_with_attachment 工具</li>
+                        <li><strong>附件读取</strong>：读取生成的Markdown文件</li>
+                        <li><strong>SMTP发送</strong>：通过SMTP服务器发送邮件</li>
+                        <li><strong>状态返回</strong>：返回发送成功或失败状态</li>
+                    </ul>
+                </div>
+
+                <div class="stage">
+                    <h4>5️⃣ 最终响应阶段</h4>
+                    <ul>
+                        <li><strong>对话总结</strong>：LLM生成总结性回复</li>
+                        <li><strong>记录保存</strong>：保存完整对话历史</li>
+                        <li><strong>用户反馈</strong>：向用户显示最终结果</li>
+                    </ul>
+                </div>
+
+                <div class="note">
+                    <h4>💡 说明</h4>
+                    <p>此简化版流程图略去了占位符解析阶段，直接展示从新闻搜索到情感分析的数据传递过程。在实际实现中，MCP Client会自动处理占位符解析，将新闻数据正确传递给情感分析工具。</p>
+                </div>
+            </div>
+
+            <div class="description">
+                <h3>🔧 技术要点</h3>
+                
+                <div class="stage">
+                    <h4>文件命名规则</h4>
+                    <ul>
+                        <li><strong>新闻数据</strong>：google_news_YYYYMMDD_HHMMSS.json</li>
+                        <li><strong>分析报告</strong>：sentiment_关键词_YYYYMMDD_HHMMSS.md</li>
+                        <li><strong>对话记录</strong>：查询_YYYYMMDD_HHMMSS.txt</li>
+                    </ul>
+                </div>
+
+                <div class="stage">
+                    <h4>数据流向</h4>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto;">
+用户指令 → 工具规划 → 新闻搜索 → 情感分析 → 报告生成 → 邮件发送 → 结果反馈
+    ↓         ↓         ↓         ↓         ↓         ↓         ↓
+  自然语言   JSON计划   JSON数据   LLM分析   Markdown   SMTP发送   用户界面</pre>
+                </div>
+
+                <div class="stage">
+                    <h4>核心组件</h4>
+                    <ul>
+                        <li><strong>MCP Client</strong>：协调整个工作流程，管理工具调用</li>
+                        <li><strong>MCP Server</strong>：提供工具服务，执行具体操作</li>
+                        <li><strong>LLM</strong>：进行工具规划和情感分析</li>
+                        <li><strong>外部API</strong>：新闻搜索和邮件发送服务</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            sequence: {
+                useMaxWidth: true,
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 60,
+                width: 180,
+                height: 80,
+                boxMargin: 15,
+                boxTextMargin: 8,
+                noteMargin: 15,
+                messageMargin: 40,
+                mirrorActors: true,
+                bottomMarginAdj: 1,
+                useMaxWidth: true,
+                rightAngles: false,
+                showSequenceNumbers: false,
+                fontSize: 16
+            }
+        });
+    </script>
+</body>
+</html> 
